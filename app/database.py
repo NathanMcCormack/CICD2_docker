@@ -6,7 +6,7 @@ from sqlalchemy.exc import OperationalError
  
 # Pick env file by APP_ENV (default dev) 
 envfile = { 
-    "dev": ".env.dev", 
+    "dev": ".env.dev", #If we dont specify the nevironment we want to use, we will use the dev env
     "docker": ".env.docker", 
     "test": ".env.test", 
 }.get(os.getenv("APP_ENV", "dev"), ".env.dev") 
@@ -20,6 +20,7 @@ DELAY = float(os.getenv("DB_RETRY_DELAY", "1.5"))
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {} 
  
 # small retry (harmless for SQLite, useful for Postgres) 
+# Keeps trying until the Databe is up and we can connect to it or there is a problem with the database and we exceed the retry limit
 for _ in range(RETRIES): 
     try: 
         engine = create_engine(DATABASE_URL, pool_pre_ping=True, echo=SQL_ECHO, 
@@ -30,8 +31,7 @@ connect_args=connect_args)
     except OperationalError: 
         time.sleep(DELAY) 
  
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, 
-expire_on_commit=False) 
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, expire_on_commit=False) 
  
 def get_db(): 
     db = SessionLocal() 
